@@ -1,7 +1,7 @@
 'use strict';
 
 const vscode = require('vscode');
-const { exec, spawn } = require('child_process');
+const { execFile, spawn } = require('child_process');
 const path = require('path');
 
 const SUPPORTED_LANGUAGES = new Set(['markdown', 'quarto']);
@@ -69,13 +69,15 @@ function pandocCountText(text) {
 /** Run pandoc on a FILE path; resolve with word count string. */
 function pandocCountFile(filePath) {
 	return new Promise((resolve, reject) => {
-		const escaped = filePath.replace(/"/g, '\\"');
-		exec(
-			`pandoc --from=markdown --to=plain "${escaped}" | wc -w`,
-			{ timeout: 10000 },
+		// Pass the path as an argv argument (never through a shell) so filenames
+		// containing shell metacharacters can't be interpreted as commands.
+		execFile(
+			'pandoc',
+			['--from=markdown', '--to=plain', '--', filePath],
+			{ timeout: 10000, maxBuffer: 64 * 1024 * 1024 },
 			(err, stdout, stderr) => {
 				if (err) reject(new Error(stderr || err.message));
-				else resolve(stdout.trim().replace(/\s+/g, ''));
+				else resolve(String(stdout.split(/\s+/).filter(Boolean).length));
 			}
 		);
 	});
