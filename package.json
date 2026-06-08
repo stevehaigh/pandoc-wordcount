@@ -3,6 +3,7 @@
 	"displayName": "Pandoc Word Count",
 	"description": "Real word count for Markdown and Quarto files via pandoc --to=plain | wc -w",
 	"version": "0.1.0",
+	"license": "MIT",
 	"publisher": "stevehaigh",
 	"icon": "media/icon.png",
 	"repository": {
