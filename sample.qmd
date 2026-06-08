@@ -1,0 +1,65 @@
+---
+title: "Sample Quarto Document"
+author: "Test Author"
+date: "2026-06-08"
+format: html
+---
+
+## Introduction
+
+This is a sample Quarto document for testing the pandoc word count extension.
+It contains a mix of prose, formatting, and code to exercise different parts
+of the visual editor.
+
+You can **select any portion** of this text to see the selection word count
+appear in the status bar alongside the total count.
+
+## Methods
+
+We used a variety of approaches to investigate the problem. The main steps were:
+
+1. First, we collected data from multiple sources.
+2. Then, we cleaned and normalised the data.
+3. Finally, we ran our analysis pipeline.
+
+The pipeline itself consists of a short R script shown below.
+
+```{r}
+#| echo: true
+x <- c(1, 2, 3, 4, 5)
+mean(x)
+```
+
+## Results
+
+The results were largely as expected. The mean value was 3, which is consistent
+with a uniform distribution over the integers 1 through 5.
+
+> "Statistics is the grammar of science." — Karl Pearson
+
+Here is a small summary table:
+
+| Group | N  | Mean | SD   |
+|-------|----|------|------|
+| A     | 20 | 3.1  | 0.8  |
+| B     | 18 | 2.9  | 1.1  |
+| C     | 22 | 3.4  | 0.6  |
+
+## Discussion
+
+These findings suggest that the approach is broadly applicable. Further work
+should focus on edge cases and on improving the robustness of the pipeline
+under real-world conditions, where data quality is often lower than in
+controlled experiments.
+
+### Limitations
+
+- Small sample sizes in some groups
+- Potential confounding from external variables
+- Results may not generalise beyond the current dataset
+
+## Conclusion
+
+In summary, this document demonstrates the core features of Quarto's visual
+editor, including headings, prose, lists, tables, code blocks, and block
+quotes. Select any of this text to test the word count extension.

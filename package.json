@@ -1,0 +1,30 @@
+{
+	"name": "pandoc-wordcount",
+	"displayName": "Pandoc Word Count",
+	"description": "Real word count for Markdown and Quarto files via pandoc --to=plain | wc -w",
+	"version": "0.1.0",
+	"publisher": "stevehaigh",
+	"engines": {
+		"vscode": "^1.80.0"
+	},
+	"categories": ["Other"],
+	"activationEvents": [
+		"onLanguage:markdown",
+		"onLanguage:quarto"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "pandoc-wordcount.refresh",
+				"title": "Pandoc Word Count: Refresh"
+			}
+		]
+	},
+	"scripts": {
+		"package": "vsce package"
+	},
+	"devDependencies": {
+		"@vscode/vsce": "^3.0.0"
+	}
+}
