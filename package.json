@@ -25,7 +25,17 @@
 				"command": "pandoc-wordcount.refresh",
 				"title": "Pandoc Word Count: Refresh"
 			}
-		]
+		],
+		"configuration": {
+			"title": "Pandoc Word Count",
+			"properties": {
+				"pandocWordcount.countCode": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Count code as words. When off (the default), code blocks, executable chunks (e.g. ```` ```{r} ````), and inline code are excluded so the count reflects prose — typically what a word limit refers to. When on, all code is counted."
+				}
+			}
+		}
 	},
 	"scripts": {
 		"test": "node --test",

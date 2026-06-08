@@ -57,6 +57,13 @@ test('pandocCountText returns 0 for empty/markup-only input', { skip: !hasPandoc
 	assert.equal(await pandocCountText(''), '0');
 });
 
+test('pandocCountText excludes code when excludeCode is set', { skip: !hasPandoc }, async () => {
+	// 'Hello world.' is 2 words; the code chunk adds 4 more when counted.
+	const md = 'Hello world.\n\n```{r}\nx <- 1\n```\n';
+	assert.equal(await pandocCountText(md, false), '6');
+	assert.equal(await pandocCountText(md, true), '2');
+});
+
 test('pandocCountFile counts a file by path', { skip: !hasPandoc }, async () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pwc-'));
 	const file = path.join(dir, 'fixture.md');

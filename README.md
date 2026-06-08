@@ -4,8 +4,9 @@ Shows a live word count for Markdown (`.md`) and Quarto (`.qmd`) files in the
 VS Code status bar, using Pandoc to strip markup before counting.
 
 When you select text in source mode, the display becomes `selection / total`.
-Selection counting also works in the **Quarto visual editor** (see
-[Visual editor support](#visual-editor-support) below).
+Full-file counting also works in the **Quarto visual editor**. Selection
+counting in the visual editor requires a Quarto extension change that is not
+yet released — see [Visual editor support](#visual-editor-support).
 
 ## Why this exists
 
@@ -28,16 +29,21 @@ the Quarto visual editor.
 
 ## How it works
 
-Pandoc converts the document to plain text first, so headings, links, code
-blocks, YAML front matter, and other markup are excluded from the count:
+Pandoc converts the document to plain text first, so headings, links, YAML
+front matter, and other markup are excluded from the count:
 
 ```
 pandoc --from=markdown --to=plain <file>
 ```
 
-- **Full file**: the file is passed to pandoc as an argument and the resulting
-  plain text is word-counted in Node.
-- **Selection**: the selected text is piped through `pandoc --to=plain | wc -w`.
+The plain-text output is then word-counted in Node. Both the full file (passed
+to pandoc as an argument) and the current selection (piped via stdin) use the
+same pipeline, so the two numbers are comparable.
+
+By default **code is also excluded** — code blocks, executable chunks
+(```` ```{r} ````), and inline code — so the count reflects prose, which is
+usually what a word limit refers to. See [Configuration](#configuration) to
+include code.
 
 The result appears in the bottom-right status bar. Click it to force a refresh.
 
@@ -45,15 +51,22 @@ The result appears in the bottom-right status bar. Click it to force a refresh.
 
 - Live count, updating on file switch, save, and edit (1 s debounce)
 - Selection count shown as `selection / total` (400 ms debounce)
+- Code excluded from the count by default (configurable)
 - Works for both `.md` and `.qmd` files (compatible with the Quarto extension)
-- Selection counting in the Quarto visual editor (requires the Quarto changes
-  described below)
+- Full-file counting in the Quarto visual editor (works today)
+- Selection counting in the Quarto visual editor (requires an unreleased Quarto
+  extension change — see below)
 - Click the status bar item to manually refresh
+
+## Configuration
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `pandocWordcount.countCode` | `false` | Count code as words. When off, code blocks, executable chunks, and inline code are excluded so the count reflects prose. When on, all code is counted. |
 
 ## Requirements
 
 - `pandoc` on your `PATH`
-- `wc` (standard on macOS/Linux) — used for selection counts
 
 ## Visual editor support
 

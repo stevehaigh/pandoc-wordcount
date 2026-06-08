@@ -33,6 +33,11 @@ function isSupportedDocument(document) {
 	return isSupportedUri(document.uri);
 }
 
+/** Whether to strip code from the count (the inverse of the countCode setting). */
+function excludeCode() {
+	return !vscode.workspace.getConfiguration('pandocWordcount').get('countCode', false);
+}
+
 /**
  * Returns the URI of the currently active file, even when the Quarto visual
  * editor is open (which makes window.activeTextEditor === undefined).
@@ -68,14 +73,14 @@ async function updateCount(uri, selectionText) {
 	lastCountedUri = uri.toString();
 
 	try {
-		const totalStr = await pandocCountFile(uri.fsPath);
+		const totalStr = await pandocCountFile(uri.fsPath, excludeCode());
 		// Guard against a stale result arriving after the user switched files.
 		if (lastCountedUri !== uri.toString()) return;
 
 		lastTotalWords = totalStr;
 
 		if (selectionText && selectionText.trim().length > 0) {
-			const selStr = await pandocCountText(selectionText);
+			const selStr = await pandocCountText(selectionText, excludeCode());
 			statusBarItem.text = `$(pencil) ${fmt(selStr)} / ${fmt(totalStr)} words`;
 			statusBarItem.tooltip =
 				`Selection: ${fmt(selStr)} words\nTotal: ${fmt(totalStr)} words\n` +
@@ -87,7 +92,9 @@ async function updateCount(uri, selectionText) {
 		}
 		statusBarItem.command = 'pandoc-wordcount.refresh';
 	} catch (err) {
-		statusBarItem.text = '$(warning) wc error';
+		statusBarItem.text = err.message.startsWith('pandoc not found')
+			? '$(warning) pandoc not found'
+			: '$(warning) wc error';
 		statusBarItem.tooltip = err.message;
 	}
 }
@@ -107,7 +114,7 @@ async function updateSelectionOnly(selectionText) {
 	}
 
 	try {
-		const selStr = await pandocCountText(selectionText);
+		const selStr = await pandocCountText(selectionText, excludeCode());
 		statusBarItem.text = `$(pencil) ${fmt(selStr)} / ${fmt(lastTotalWords)} words`;
 		statusBarItem.tooltip =
 			`Selection: ${fmt(selStr)} words\nTotal: ${fmt(lastTotalWords)} words\n` +
@@ -224,9 +231,28 @@ function activate(context) {
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(event => {
-			if (event.textEditor.document.uri.toString() !== lastCountedUri) return;
-			const selText = event.textEditor.document.getText(event.selections[0]);
-			scheduleSelectionCount(selText);
+			const document = event.textEditor.document;
+			if (!isSupportedDocument(document)) return;
+			const selText = document.getText(event.selections[0]);
+			// If this file hasn't been counted yet (or the total isn't ready),
+			// run a full count so we have a total to show "sel / total" against.
+			if (document.uri.toString() !== lastCountedUri || lastTotalWords === null) {
+				updateCount(document.uri, selText);
+			} else {
+				scheduleSelectionCount(selText);
+			}
+		})
+	);
+
+	// --- Configuration changes ---
+
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration(event => {
+			if (event.affectsConfiguration('pandocWordcount.countCode')) {
+				lastTotalWords = null;
+				const uri = getActiveUri();
+				updateCount(uri, getSelectionText());
+			}
 		})
 	);
 
