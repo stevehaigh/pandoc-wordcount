@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install pandoc (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y pandoc
+
+      - name: Install pandoc (macOS)
+        if: runner.os == 'macOS'
+        run: brew install pandoc
+
+      - name: Verify pandoc is available
+        run: pandoc --version
+
+      - run: npm ci
+
+      - run: npm test
+
+  package:
+    name: Package check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Ensure the extension still packages into a .vsix (catches manifest
+      # and .vscodeignore breakage). Does not publish.
+      - run: npm run package
