@@ -1,11 +1,14 @@
 'use strict';
 
 const vscode = require('vscode');
-const { execFile, spawn } = require('child_process');
-const path = require('path');
+const {
+	isSupportedExtension,
+	fmt,
+	pandocCountText,
+	pandocCountFile,
+} = require('./lib/wordcount');
 
 const SUPPORTED_LANGUAGES = new Set(['markdown', 'quarto']);
-const SUPPORTED_EXTENSIONS = new Set(['.md', '.qmd']);
 
 let statusBarItem;
 let debounceTimer;
@@ -21,7 +24,7 @@ let lastCountedUri = null;
 /** True for .md/.qmd regardless of whether the Quarto extension is installed. */
 function isSupportedUri(uri) {
 	if (!uri || uri.scheme !== 'file') return false;
-	return SUPPORTED_EXTENSIONS.has(path.extname(uri.fsPath).toLowerCase());
+	return isSupportedExtension(uri.fsPath);
 }
 
 function isSupportedDocument(document) {
@@ -45,47 +48,6 @@ function getActiveUri() {
 	const input = activeTab.input;
 	if (input && 'uri' in input) return input.uri;
 	return undefined;
-}
-
-/** Run pandoc on TEXT passed via stdin; resolve with word count string. */
-function pandocCountText(text) {
-	return new Promise((resolve, reject) => {
-		const proc = spawn('sh', ['-c', 'pandoc --from=markdown --to=plain | wc -w'], {
-			timeout: 10000,
-		});
-		let stdout = '';
-		let stderr = '';
-		proc.stdout.on('data', d => { stdout += d; });
-		proc.stderr.on('data', d => { stderr += d; });
-		proc.on('close', code => {
-			if (code !== 0) reject(new Error(stderr || `exit ${code}`));
-			else resolve(stdout.trim().replace(/\s+/g, ''));
-		});
-		proc.stdin.write(text);
-		proc.stdin.end();
-	});
-}
-
-/** Run pandoc on a FILE path; resolve with word count string. */
-function pandocCountFile(filePath) {
-	return new Promise((resolve, reject) => {
-		// Pass the path as an argv argument (never through a shell) so filenames
-		// containing shell metacharacters can't be interpreted as commands.
-		execFile(
-			'pandoc',
-			['--from=markdown', '--to=plain', '--', filePath],
-			{ timeout: 10000, maxBuffer: 64 * 1024 * 1024 },
-			(err, stdout, stderr) => {
-				if (err) reject(new Error(stderr || err.message));
-				else resolve(String(stdout.split(/\s+/).filter(Boolean).length));
-			}
-		);
-	});
-}
-
-/** Format a raw wc number string for display. */
-function fmt(n) {
-	return Number(n).toLocaleString();
 }
 
 /**

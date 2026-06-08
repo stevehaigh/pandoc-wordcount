@@ -6,4 +6,5 @@ node_modules/**
 CLAUDE.md
 sample.qmd
 docs/**
+test/**
 media/icon.svg
