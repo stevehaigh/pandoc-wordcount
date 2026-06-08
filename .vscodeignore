@@ -1,3 +1,9 @@
 .vscode/**
+.claude/**
 node_modules/**
 *.vsix
+.gitignore
+CLAUDE.md
+sample.qmd
+docs/**
+media/icon.svg

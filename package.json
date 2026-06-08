@@ -4,6 +4,11 @@
 	"description": "Real word count for Markdown and Quarto files via pandoc --to=plain | wc -w",
 	"version": "0.1.0",
 	"publisher": "stevehaigh",
+	"icon": "media/icon.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/stevehaigh/pandoc-wordcount.git"
+	},
 	"engines": {
 		"vscode": "^1.80.0"
 	},
