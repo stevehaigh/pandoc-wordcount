@@ -7,6 +7,25 @@ When you select text in source mode, the display becomes `selection / total`.
 Selection counting also works in the **Quarto visual editor** (see
 [Visual editor support](#visual-editor-support) below).
 
+## Why this exists
+
+Word limits are usually about *prose* — the words a reader or grader actually
+reads. But a Markdown or Quarto source file is full of things that aren't
+prose: YAML front matter, heading syntax, link URLs, code blocks, figure and
+table markup, citation keys. VS Code's built-in word count (and most naive
+counters) count all of that, so the number it shows is inflated and doesn't
+match what a marker counts. Running the document through Pandoc to plain text
+first strips the markup, so the count reflects the words that count.
+
+**Counting a selection** is the part that makes this useful day to day. If
+you're writing to a word limit — an essay, an assignment, a journal abstract —
+you rarely want the whole-file total. You want to know how long *this section*
+is, or the body without the references, or whether the introduction is pulling
+more than its share. Select the relevant text and the status bar shows
+`selection / total`, so you can keep a section under its cap without deleting
+and re-counting. This works the same whether you write in Markdown source or in
+the Quarto visual editor.
+
 ## How it works
 
 Pandoc converts the document to plain text first, so headings, links, code
