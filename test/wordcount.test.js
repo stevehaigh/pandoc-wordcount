@@ -12,7 +12,7 @@ const {
 	fmt,
 	pandocCountText,
 	pandocCountFile,
-} = require('../lib/wordcount');
+} = require('../out/lib/wordcount');
 
 // pandoc-dependent tests are skipped when pandoc isn't on PATH (e.g. some CI).
 let hasPandoc = false;

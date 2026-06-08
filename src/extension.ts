@@ -1,40 +1,38 @@
-'use strict';
-
-const vscode = require('vscode');
-const {
+import * as vscode from 'vscode';
+import {
 	isSupportedExtension,
 	fmt,
 	pandocCountText,
 	pandocCountFile,
-} = require('./lib/wordcount');
+} from './lib/wordcount';
 
 const SUPPORTED_LANGUAGES = new Set(['markdown', 'quarto']);
 
-let statusBarItem;
-let debounceTimer;
-let selectionDebounceTimer;
-let visualModePollingTimer;
+let statusBarItem: vscode.StatusBarItem;
+let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+let selectionDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+let visualModePollingTimer: ReturnType<typeof setInterval> | undefined;
 let lastVisualSelectionText = '';
 
 // Cache the last full-file word count so we can display "sel / total" quickly.
-let lastTotalWords = null;
+let lastTotalWords: string | null = null;
 // Track the URI we last counted so stale results don't overwrite a new file.
-let lastCountedUri = null;
+let lastCountedUri: string | null = null;
 
 /** True for .md/.qmd regardless of whether the Quarto extension is installed. */
-function isSupportedUri(uri) {
+function isSupportedUri(uri: vscode.Uri | undefined): boolean {
 	if (!uri || uri.scheme !== 'file') return false;
 	return isSupportedExtension(uri.fsPath);
 }
 
-function isSupportedDocument(document) {
+function isSupportedDocument(document: vscode.TextDocument | undefined): boolean {
 	if (!document) return false;
 	if (SUPPORTED_LANGUAGES.has(document.languageId)) return true;
 	return isSupportedUri(document.uri);
 }
 
 /** Whether to strip code from the count (the inverse of the countCode setting). */
-function excludeCode() {
+function excludeCode(): boolean {
 	return !vscode.workspace.getConfiguration('pandocWordcount').get('countCode', false);
 }
 
@@ -43,14 +41,14 @@ function excludeCode() {
  * editor is open (which makes window.activeTextEditor === undefined).
  * Falls back to the Tab API (VS Code 1.80+).
  */
-function getActiveUri() {
+function getActiveUri(): vscode.Uri | undefined {
 	const editor = vscode.window.activeTextEditor;
 	if (editor) return editor.document.uri;
 
 	// Visual / custom editor — inspect the active tab's input.
 	const activeTab = vscode.window.tabGroups?.activeTabGroup?.activeTab;
 	if (!activeTab) return undefined;
-	const input = activeTab.input;
+	const input = activeTab.input as { uri?: vscode.Uri } | undefined;
 	if (input && 'uri' in input) return input.uri;
 	return undefined;
 }
@@ -60,7 +58,7 @@ function getActiveUri() {
  * Optionally also count words in `selectionText` (pandoc via stdin) and
  * display as "sel / total".
  */
-async function updateCount(uri, selectionText) {
+async function updateCount(uri: vscode.Uri | undefined, selectionText: string): Promise<void> {
 	if (!uri || !isSupportedUri(uri)) {
 		statusBarItem.hide();
 		lastTotalWords = null;
@@ -92,10 +90,11 @@ async function updateCount(uri, selectionText) {
 		}
 		statusBarItem.command = 'pandoc-wordcount.refresh';
 	} catch (err) {
-		statusBarItem.text = err.message.startsWith('pandoc not found')
+		const msg = err instanceof Error ? err.message : String(err);
+		statusBarItem.text = msg.startsWith('pandoc not found')
 			? '$(warning) pandoc not found'
 			: '$(warning) wc error';
-		statusBarItem.tooltip = err.message;
+		statusBarItem.tooltip = msg;
 	}
 }
 
@@ -103,7 +102,7 @@ async function updateCount(uri, selectionText) {
  * Update only the selection portion of the display without re-running the
  * full-file count.  Used for rapid selection changes.
  */
-async function updateSelectionOnly(selectionText) {
+async function updateSelectionOnly(selectionText: string): Promise<void> {
 	if (lastTotalWords === null) return;
 
 	if (!selectionText || selectionText.trim().length === 0) {
@@ -125,23 +124,23 @@ async function updateSelectionOnly(selectionText) {
 }
 
 /** Get the current selection text from the active editor (empty string if none). */
-function getSelectionText() {
+function getSelectionText(): string {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor || editor.selection.isEmpty) return '';
 	return editor.document.getText(editor.selection);
 }
 
-function scheduleFullCount(uri) {
+function scheduleFullCount(uri: vscode.Uri): void {
 	clearTimeout(debounceTimer);
 	debounceTimer = setTimeout(() => updateCount(uri, getSelectionText()), 1000);
 }
 
-function scheduleSelectionCount(selText) {
+function scheduleSelectionCount(selText: string): void {
 	clearTimeout(selectionDebounceTimer);
 	selectionDebounceTimer = setTimeout(() => updateSelectionOnly(selText), 400);
 }
 
-function startVisualModePolling() {
+function startVisualModePolling(): void {
 	if (visualModePollingTimer) return;
 	lastVisualSelectionText = '';
 	visualModePollingTimer = setInterval(async () => {
@@ -151,7 +150,7 @@ function startVisualModePolling() {
 			return;
 		}
 		try {
-			const text = await vscode.commands.executeCommand('quarto.editor.getSelectedText');
+			const text = await vscode.commands.executeCommand<string>('quarto.editor.getSelectedText');
 			const selText = typeof text === 'string' ? text : '';
 			if (selText !== lastVisualSelectionText) {
 				lastVisualSelectionText = selText;
@@ -164,15 +163,15 @@ function startVisualModePolling() {
 	}, 500);
 }
 
-function stopVisualModePolling() {
+function stopVisualModePolling(): void {
 	if (visualModePollingTimer) {
 		clearInterval(visualModePollingTimer);
-		visualModePollingTimer = null;
+		visualModePollingTimer = undefined;
 	}
 	lastVisualSelectionText = '';
 }
 
-function activate(context) {
+export function activate(context: vscode.ExtensionContext): void {
 	statusBarItem = vscode.window.createStatusBarItem(
 		vscode.StatusBarAlignment.Right,
 		100
@@ -278,10 +277,8 @@ function activate(context) {
 	}
 }
 
-function deactivate() {
+export function deactivate(): void {
 	clearTimeout(debounceTimer);
 	clearTimeout(selectionDebounceTimer);
 	stopVisualModePolling();
 }
-
-module.exports = { activate, deactivate };

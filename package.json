@@ -13,12 +13,14 @@
 	"engines": {
 		"vscode": "^1.80.0"
 	},
-	"categories": ["Other"],
+	"categories": [
+		"Other"
+	],
 	"activationEvents": [
 		"onLanguage:markdown",
 		"onLanguage:quarto"
 	],
-	"main": "./extension.js",
+	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
@@ -38,10 +40,14 @@
 		}
 	},
 	"scripts": {
-		"test": "node --test",
-		"package": "vsce package"
+		"compile": "tsc -p tsconfig.json && cp src/lib/nocode.lua out/lib/nocode.lua",
+		"test": "npm run compile && node --test",
+		"package": "npm run compile && vsce package"
 	},
 	"devDependencies": {
-		"@vscode/vsce": "^3.0.0"
+		"@types/node": "^25.9.2",
+		"@types/vscode": "1.80.0",
+		"@vscode/vsce": "^3.0.0",
+		"typescript": "^6.0.3"
 	}
 }
